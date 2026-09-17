@@ -9,10 +9,33 @@ const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 
-app.use(cors({
-  origin: clientUrl,
-  credentials: true
-}));
+const allowedOrigins = [
+  "https://void-run-puce.vercel.app",
+  "https://void-1g10v8nxz-swapajeets-projects.vercel.app",
+  "https://void-run.vercel.app",
+  "http://localhost:5173"
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Postman / server-to-server requests
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log("❌ CORS blocked:", origin);
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (req, res) => {
