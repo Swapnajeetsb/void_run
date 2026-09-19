@@ -16,7 +16,7 @@ export default function LogoBar({ dark = true }) {
       <div className="logo-set">
         <img src="/assets/aces-logo.png" alt="ACES" />
         <img src="/assets/cse-logo.png" alt="CSE" />
-        {/* <Link to="/login" className="nav-login"><LogIn size={16}/> Coordinator / Admin</Link> */}
+        <Link to="/login" className="nav-login"><LogIn size={16}/> Coordinator / Admin</Link>
       </div>
     </header>
   );
