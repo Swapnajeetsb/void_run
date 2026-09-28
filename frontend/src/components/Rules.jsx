@@ -6,7 +6,7 @@ const rules = [
     number: "01",
     title: "Team Format",
     description:
-      "Each team must consist of a minimum of 1 member and a maximum of 4 members."
+      "Each team must consist of a minimum of 1 member and a maximum of 2 members."
   },
   {
     number: "02",
