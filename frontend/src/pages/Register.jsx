@@ -39,7 +39,7 @@ const initial = {
 
   utrId: "",
 
-  amount: 100
+  amount: 125
 };
 
 export default function Register() {
@@ -48,7 +48,7 @@ export default function Register() {
   const [form, setForm] = useState(initial);
 
   const [config, setConfig] = useState({
-    registrationFee: 100,
+    registrationFee: 125,
     upiId: "kadam yash0102-1@okhdfcbank",
     upiName: "Yash Kadam"
   });
@@ -68,7 +68,7 @@ export default function Register() {
       .get("/registrations/config")
       .then(({ data }) => {
         setConfig({
-          registrationFee: data.registrationFee || 100,
+          registrationFee: data.registrationFee || 125,
           upiId:
             data.upiId ||
             "kadam yash0102-1@okhdfcbank",
@@ -79,7 +79,7 @@ export default function Register() {
 
         setForm((f) => ({
           ...f,
-          amount: data.registrationFee || 100
+          amount: data.registrationFee || 125
         }));
       })
       .catch(() => {
