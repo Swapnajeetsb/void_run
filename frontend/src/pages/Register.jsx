@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -10,7 +10,6 @@ import {
   Smartphone,
   UsersRound
 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 import LogoBar from "../components/LogoBar";
 import StepBar from "../components/StepBar";
 import { api } from "../api";
@@ -50,8 +49,8 @@ export default function Register() {
 
   const [config, setConfig] = useState({
     registrationFee: 100,
-    upiId: "",
-    upiName: "VOID RUN CSE"
+    upiId: "kadam yash0102-1@okhdfcbank",
+    upiName: "Yash Kadam"
   });
 
   const [error, setError] = useState("");
@@ -69,17 +68,23 @@ export default function Register() {
       .get("/registrations/config")
       .then(({ data }) => {
         setConfig({
-          registrationFee: data.registrationFee,
-          upiId: data.upiId,
-          upiName: data.upiName
+          registrationFee: data.registrationFee || 100,
+          upiId:
+            data.upiId ||
+            "kadam yash0102-1@okhdfcbank",
+          upiName:
+            data.upiName ||
+            "Yash Kadam"
         });
 
         setForm((f) => ({
           ...f,
-          amount: data.registrationFee
+          amount: data.registrationFee || 100
         }));
       })
-      .catch(() => {});
+      .catch(() => {
+        // Keep default payment configuration
+      });
   }, []);
 
   // ============================================================
@@ -108,22 +113,6 @@ export default function Register() {
   };
 
   // ============================================================
-  // UPI URL
-  // ============================================================
-
-  const upiUrl = useMemo(() => {
-    const params = new URLSearchParams({
-      pa: config.upiId || "yourupi@bank",
-      pn: config.upiName || "VOID RUN CSE",
-      am: String(config.registrationFee || 100),
-      cu: "INR",
-      tn: `VOID RUN ${form.teamName || "TEAM"}`
-    });
-
-    return `upi://pay?${params.toString()}`;
-  }, [config, form.teamName]);
-
-  // ============================================================
   // STEP 1 VALIDATION
   // ============================================================
 
@@ -140,10 +129,7 @@ export default function Register() {
       return "Please enter your department.";
     }
 
-    for (const [
-      label,
-      m
-    ] of [
+    for (const [label, m] of [
       ["Member 1", form.member1],
       ["Member 2", form.member2]
     ]) {
@@ -647,43 +633,77 @@ export default function Register() {
 
             </div>
 
-            {/* ONLINE */}
+            {/* =================================================
+                ONLINE PAYMENT
+            ================================================= */}
 
             {form.paymentMode ===
             "online" ? (
               <div className="payment-area">
 
+                {/* QR CARD */}
+
                 <div className="qr-card">
 
-                  <div className="qr-glow">
+                  <div
+                    className="qr-glow"
+                    style={{
+                      background: "#ffffff",
+                      padding: "12px",
+                      borderRadius: "20px",
+                      display: "inline-flex",
+                      justifyContent: "center",
+                      alignItems: "center"
+                    }}
+                  >
 
-                    <QRCodeSVG
-                      value={upiUrl}
-                      size={220}
-                      bgColor="#ffffff"
-                      fgColor="#070a12"
-                      includeMargin
+                    <img
+                      src="/payment-qr.jpeg"
+                      alt="VOID RUN Payment QR"
+                      style={{
+                        width: "280px",
+                        maxWidth: "100%",
+                        height: "auto",
+                        display: "block",
+                        borderRadius: "12px"
+                      }}
                     />
 
                   </div>
 
                   <p>
-                    Scan with GPay /
-                    PhonePe / Paytm /
-                    UPI app
+                    Scan this QR with
+                    GPay / PhonePe /
+                    Paytm / any UPI app
                   </p>
 
                   <small>
-                    Pay ₹
-                    {config.registrationFee}
+                    Pay{" "}
+                    <b>
+                      ₹{config.registrationFee}
+                    </b>
                     {" "}to{" "}
                     <b>
-                      {config.upiId ||
-                        "UPI ID will appear after setup"}
+                      {config.upiName}
+                    </b>
+                  </small>
+
+                  <small
+                    style={{
+                      display: "block",
+                      marginTop: "6px",
+                      wordBreak: "break-all"
+                    }}
+                  >
+                    UPI ID:{" "}
+                    <b>
+                      {config.upiId}
                     </b>
                   </small>
 
                 </div>
+
+                {/* PAYMENT FIELDS */}
 
                 <div className="payment-fields">
 
@@ -718,8 +738,8 @@ export default function Register() {
 
                       <span>
                         Tick this only
-                        after paying the
-                        displayed amount.
+                        after paying
+                        ₹{config.registrationFee}.
                       </span>
 
                     </div>
@@ -747,6 +767,13 @@ export default function Register() {
 
                   <div className="info-box">
 
+                    After payment, enter
+                    the UTR / Transaction ID
+                    shown in your UPI app.
+
+                    <br />
+                    <br />
+
                     UTR validation checks
                     the format and
                     duplicate entries.
@@ -762,7 +789,9 @@ export default function Register() {
               </div>
             ) : (
 
-              /* OFFLINE */
+              /* =================================================
+                 OFFLINE PAYMENT
+              ================================================= */
 
               <div className="offline-payment">
 
