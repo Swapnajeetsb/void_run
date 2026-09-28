@@ -1,0 +1,147 @@
+.results-section {
+  width: 100%;
+  padding: 90px 20px;
+  background: #0b1220;
+  color: #ffffff;
+}
+
+.results-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.results-heading {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.results-heading span {
+  color: #f97316;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+
+.results-heading h2 {
+  margin: 10px 0;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+}
+
+.results-heading p {
+  color: #94a3b8;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+.results-empty {
+  text-align: center;
+  padding: 55px 25px;
+  border: 1px solid #26334d;
+  border-radius: 20px;
+  background: #111827;
+}
+
+.results-icon {
+  width: 65px;
+  height: 65px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f97316;
+  color: #080b14;
+  border-radius: 50%;
+  font-size: 28px;
+}
+
+.results-empty h3 {
+  margin: 0 0 10px;
+  font-size: 25px;
+}
+
+.results-empty p {
+  max-width: 550px;
+  margin: auto;
+  color: #94a3b8;
+  line-height: 1.7;
+}
+
+.qualified-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.qualified-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  background: #111827;
+  border: 1px solid #26334d;
+  border-radius: 16px;
+  transition: 0.3s ease;
+}
+
+.qualified-card:hover {
+  transform: translateX(5px);
+  border-color: #f97316;
+}
+
+.qualified-rank {
+  min-width: 55px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f97316;
+  color: #080b14;
+  border-radius: 12px;
+  font-weight: 900;
+}
+
+.qualified-info {
+  flex: 1;
+}
+
+.qualified-info h3 {
+  margin: 0 0 5px;
+  font-size: 19px;
+}
+
+.qualified-info p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.qualified-status {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  .results-section {
+    padding: 65px 16px;
+  }
+
+  .qualified-card {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .qualified-status {
+    display: none;
+  }
+
+  .qualified-rank {
+    min-width: 45px;
+    height: 45px;
+  }
+}

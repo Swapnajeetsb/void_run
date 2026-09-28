@@ -4,16 +4,30 @@ const { registrationFee } = require("../config");
 const { registrationId, shortCode } = require("../utils/codes");
 const { sendRegistrationEmail } = require("../services/mailer");
 
+// ============================================================
+// HELPERS
+// ============================================================
+
 function normalizeMobile(v) {
   return String(v || "").replace(/\D/g, "");
 }
 
 function validUTR(utr) {
-  return /^[A-Za-z0-9]{8,35}$/.test(String(utr || "").trim());
+  return /^[A-Za-z0-9]{8,35}$/.test(
+    String(utr || "").trim()
+  );
 }
+
+// ============================================================
+// CREATE REGISTRATION
+// ============================================================
 
 async function createRegistration(req, res) {
   try {
+    // ========================================================
+    // EXPRESS VALIDATOR
+    // ========================================================
+
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -25,14 +39,85 @@ async function createRegistration(req, res) {
 
     const body = req.body;
 
+    // ========================================================
+    // BASIC REQUIRED FIELD VALIDATION
+    // ========================================================
+
+    if (!body.teamName?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Team name is required."
+      });
+    }
+
+    if (!body.collegeName?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "College name is required."
+      });
+    }
+
+    if (!body.department?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Department is required."
+      });
+    }
+
+    if (!body.member1?.name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Member 1 name is required."
+      });
+    }
+
+    if (!body.member1?.email?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Member 1 email is required."
+      });
+    }
+
+    if (!body.member1?.mobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Member 1 mobile is required."
+      });
+    }
+
+    if (!body.member2?.name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Member 2 name is required."
+      });
+    }
+
+    if (!body.member2?.email?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Member 2 email is required."
+      });
+    }
+
+    if (!body.member2?.mobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Member 2 mobile is required."
+      });
+    }
+
+    // ========================================================
+    // PAYMENT MODE
+    // ========================================================
+
     const paymentMode =
       body.paymentMode === "offline"
         ? "offline"
         : "online";
 
-    // =========================================================
+    // ========================================================
     // ONLINE PAYMENT VALIDATION
-    // =========================================================
+    // ========================================================
 
     if (paymentMode === "online") {
       if (!body.paymentConfirmed) {
@@ -60,31 +145,70 @@ async function createRegistration(req, res) {
       if (duplicate) {
         return res.status(409).json({
           success: false,
-          message: "This UTR ID has already been used."
+          message:
+            "This UTR ID has already been used."
         });
       }
     }
 
-    // =========================================================
+    // ========================================================
     // REGISTRATION DATA
-    // =========================================================
+    // ========================================================
 
     const registrationData = {
       registrationId: registrationId(),
 
+      // ======================================================
+      // TEAM DETAILS
+      // ======================================================
+
       teamName: body.teamName.trim(),
+
+      // NEW
+      collegeName: body.collegeName.trim(),
+
+      // NEW
+      department: body.department.trim(),
+
+      // ======================================================
+      // MEMBER 1
+      // ======================================================
 
       member1: {
         name: body.member1.name.trim(),
-        email: body.member1.email.trim().toLowerCase(),
-        mobile: normalizeMobile(body.member1.mobile)
+
+        email:
+          body.member1.email
+            .trim()
+            .toLowerCase(),
+
+        mobile:
+          normalizeMobile(
+            body.member1.mobile
+          )
       },
+
+      // ======================================================
+      // MEMBER 2
+      // ======================================================
 
       member2: {
         name: body.member2.name.trim(),
-        email: body.member2.email.trim().toLowerCase(),
-        mobile: normalizeMobile(body.member2.mobile)
+
+        email:
+          body.member2.email
+            .trim()
+            .toLowerCase(),
+
+        mobile:
+          normalizeMobile(
+            body.member2.mobile
+          )
       },
+
+      // ======================================================
+      // PAYMENT
+      // ======================================================
 
       paymentMode,
 
@@ -102,7 +226,12 @@ async function createRegistration(req, res) {
           ? new Date()
           : null,
 
-      confirmationCode: shortCode("VOID"),
+      // ======================================================
+      // CONFIRMATION
+      // ======================================================
+
+      confirmationCode:
+        shortCode("VOID"),
 
       notes:
         paymentMode === "offline"
@@ -110,71 +239,104 @@ async function createRegistration(req, res) {
           : ""
     };
 
-    // =========================================================
+    // ========================================================
     // UTR ONLY FOR ONLINE PAYMENT
-    // =========================================================
+    // ========================================================
 
     if (paymentMode === "online") {
-      registrationData.utrId = body.utrId.trim();
+      registrationData.utrId =
+        body.utrId.trim();
     }
 
-    // =========================================================
+    // ========================================================
     // CREATE REGISTRATION
-    // =========================================================
+    // ========================================================
 
-    const reg = await Registration.create(
-      registrationData
-    );
+    const reg =
+      await Registration.create(
+        registrationData
+      );
 
-    // =========================================================
+    // ========================================================
     // EMAIL
-    // =========================================================
+    // ========================================================
 
-    const emailTo = reg.member1.email;
+    const emailTo =
+      reg.member1.email;
 
-    // =========================================================
+    // ========================================================
     // OFFLINE PAYMENT
-    // =========================================================
+    // ========================================================
 
-   if (paymentMode === "offline") {
-  return res.status(201).json({
-    success: true,
-    message:
-      "Offline registration request submitted successfully. Meet the coordinator and pay the registration fee.",
-    registration: {
-      registrationId: reg.registrationId,
-      teamName: reg.teamName,
-      confirmationCode: reg.confirmationCode,
-      paymentMode: reg.paymentMode,
-      paymentStatus: reg.paymentStatus,
-      email: emailTo
-    },
-    email: {
-      sent: false,
-      status: "coordinator_confirmation_required"
+    if (paymentMode === "offline") {
+      return res.status(201).json({
+        success: true,
+
+        message:
+          "Offline registration request submitted successfully. Meet the coordinator and pay the registration fee.",
+
+        registration: {
+          registrationId:
+            reg.registrationId,
+
+          teamName:
+            reg.teamName,
+
+          // NEW
+          collegeName:
+            reg.collegeName,
+
+          // NEW
+          department:
+            reg.department,
+
+          confirmationCode:
+            reg.confirmationCode,
+
+          paymentMode:
+            reg.paymentMode,
+
+          paymentStatus:
+            reg.paymentStatus,
+
+          email:
+            emailTo
+        },
+
+        email: {
+          sent: false,
+          status:
+            "coordinator_confirmation_required"
+        }
+      });
     }
-  });
-}
-    // =========================================================
-    // ONLINE PAYMENT
-    // =========================================================
-    // IMPORTANT:
-    // Email ला await करत नाही.
-    // Registration response लगेच user ला मिळेल.
+
+    // ========================================================
+    // ONLINE PAYMENT EMAIL
+    // ========================================================
+    //
     // Email background मध्ये send होईल.
-    // =========================================================
+    // Registration response लगेच user ला मिळेल.
+    //
+    // ========================================================
 
     sendRegistrationEmail({
       registration: reg,
-      recipient: reg.member1.name,
-      to: emailTo,
+
+      recipient:
+        reg.member1.name,
+
+      to:
+        emailTo,
+
       type: "success"
     })
       .then(async (emailResult) => {
 
         if (emailResult?.sent) {
 
-          reg.confirmationSentAt = new Date();
+          reg.confirmationSentAt =
+            new Date();
 
           await reg.save();
 
@@ -186,7 +348,8 @@ async function createRegistration(req, res) {
 
           console.log(
             `⚠️ Email not sent to ${emailTo}:`,
-            emailResult?.reason || "Unknown reason"
+            emailResult?.reason ||
+              "Unknown reason"
           );
         }
 
@@ -200,9 +363,9 @@ async function createRegistration(req, res) {
 
       });
 
-    // =========================================================
+    // ========================================================
     // IMMEDIATE RESPONSE
-    // =========================================================
+    // ========================================================
 
     return res.status(201).json({
 
@@ -218,6 +381,14 @@ async function createRegistration(req, res) {
 
         teamName:
           reg.teamName,
+
+        // NEW
+        collegeName:
+          reg.collegeName,
+
+        // NEW
+        department:
+          reg.department,
 
         confirmationCode:
           reg.confirmationCode,
@@ -240,9 +411,9 @@ async function createRegistration(req, res) {
 
   } catch (error) {
 
-    // =========================================================
+    // ========================================================
     // DUPLICATE UTR SAFETY
-    // =========================================================
+    // ========================================================
 
     if (
       error?.code === 11000 &&
@@ -255,6 +426,10 @@ async function createRegistration(req, res) {
       });
     }
 
+    // ========================================================
+    // ERROR
+    // ========================================================
+
     console.error(
       "Registration Error:",
       error
@@ -266,6 +441,10 @@ async function createRegistration(req, res) {
     });
   }
 }
+
+// ============================================================
+// EXPORT
+// ============================================================
 
 module.exports = {
   createRegistration

@@ -20,9 +20,7 @@ const {
 // ============================================================
 
 async function dashboard(req, res) {
-
   try {
-
     const [
       total,
       online,
@@ -66,10 +64,8 @@ async function dashboard(req, res) {
 
     ]);
 
-
     res.json({
       success: true,
-
       stats: {
         total,
         online,
@@ -91,7 +87,6 @@ async function dashboard(req, res) {
     });
 
   }
-
 }
 
 
@@ -100,7 +95,6 @@ async function dashboard(req, res) {
 // ============================================================
 
 async function listRegistrations(req, res) {
-
   try {
 
     const q = String(
@@ -113,9 +107,7 @@ async function listRegistrations(req, res) {
     const paymentStatus =
       req.query.paymentStatus;
 
-
     const filter = {};
-
 
     if (q) {
 
@@ -123,6 +115,20 @@ async function listRegistrations(req, res) {
 
         {
           teamName: {
+            $regex: q,
+            $options: "i"
+          }
+        },
+
+        {
+          collegeName: {
+            $regex: q,
+            $options: "i"
+          }
+        },
+
+        {
+          department: {
             $regex: q,
             $options: "i"
           }
@@ -164,9 +170,7 @@ async function listRegistrations(req, res) {
         }
 
       ];
-
     }
-
 
     if (
       ["online", "offline"].includes(
@@ -178,7 +182,6 @@ async function listRegistrations(req, res) {
         paymentMode;
 
     }
-
 
     if (
       [
@@ -195,7 +198,6 @@ async function listRegistrations(req, res) {
 
     }
 
-
     const registrations =
       await Registration
         .find(filter)
@@ -206,7 +208,6 @@ async function listRegistrations(req, res) {
           "coordinatorId",
           "name email"
         );
-
 
     res.json({
       success: true,
@@ -226,19 +227,23 @@ async function listRegistrations(req, res) {
     });
 
   }
-
 }
 
 
 // ============================================================
 // UPDATE PAYMENT
 // ============================================================
-// IMPORTANT:
-// Coordinator/Admin clicks "Offline Paid"
-// → paymentStatus = offline-paid
-// → paidAt = current time
-// → coordinatorId = logged-in user
-// → confirmation email sent
+// Participant selects OFFLINE
+// ↓
+// Registration created with paymentStatus = pending
+// ↓
+// Admin / Coordinator collects payment
+// ↓
+// Clicks OFFLINE PAID
+// ↓
+// paymentStatus = offline-paid
+// ↓
+// Confirmation email sent to Member 1
 // ============================================================
 
 async function updatePayment(req, res) {
@@ -253,29 +258,22 @@ async function updatePayment(req, res) {
       "offline-paid"
     ];
 
-
     const status =
       String(
         req.body.status || ""
       ).trim();
 
-
     if (!allowed.includes(status)) {
 
       return res.status(400).json({
-
         success: false,
-
-        message:
-          "Invalid payment status"
-
+        message: "Invalid payment status"
       });
 
     }
 
-
     // ========================================================
-    // FIND REGISTRATION FIRST
+    // FIND REGISTRATION
     // ========================================================
 
     const reg =
@@ -283,28 +281,17 @@ async function updatePayment(req, res) {
         req.params.id
       );
 
-
     if (!reg) {
 
       return res.status(404).json({
-
         success: false,
-
-        message:
-          "Registration not found"
-
+        message: "Registration not found"
       });
 
     }
 
-
-    // ========================================================
-    // CHECK OLD STATUS
-    // ========================================================
-
     const oldStatus =
       reg.paymentStatus;
-
 
     // ========================================================
     // UPDATE PAYMENT STATUS
@@ -313,9 +300,8 @@ async function updatePayment(req, res) {
     reg.paymentStatus =
       status;
 
-
     // ========================================================
-    // PAID TIME
+    // PAID DATE
     // ========================================================
 
     if (
@@ -328,9 +314,8 @@ async function updatePayment(req, res) {
 
     }
 
-
     // ========================================================
-    // COORDINATOR / ADMIN ID
+    // COORDINATOR / ADMIN
     // ========================================================
 
     if (
@@ -344,9 +329,8 @@ async function updatePayment(req, res) {
 
     }
 
-
     // ========================================================
-    // OFFLINE PAID EMAIL
+    // EMAIL
     // ========================================================
 
     let email = {
@@ -354,20 +338,20 @@ async function updatePayment(req, res) {
       status: "not_required"
     };
 
+    // ========================================================
+    // SEND OFFLINE CONFIRMATION EMAIL
+    // ========================================================
 
-    if (
-      status === "offline-paid"
-    ) {
+    if (status === "offline-paid") {
 
-      // ------------------------------------------------------
-      // IMPORTANT:
-      // Existing participant registration वर
-      // पहिल्यांदाच Offline Paid झाल्यावरच email.
-      // ------------------------------------------------------
-
+      // Email only once
       if (!reg.confirmationSentAt) {
 
         try {
+
+          console.log(
+            `📧 Sending offline confirmation email to ${reg.member1.email}...`
+          );
 
           email =
             await sendRegistrationEmail({
@@ -385,29 +369,28 @@ async function updatePayment(req, res) {
 
             });
 
+          // ==================================================
+          // EMAIL SUCCESS
+          // ==================================================
 
-            // ------------------------------------------------
-            // EMAIL SUCCESS
-            // ------------------------------------------------
+          if (email?.sent) {
 
-            if (email?.sent) {
+            reg.confirmationSentAt =
+              new Date();
 
-              reg.confirmationSentAt =
-                new Date();
+            console.log(
+              `✅ Offline confirmation email sent to ${reg.member1.email}`
+            );
 
-              console.log(
-                `📧 Offline confirmation email sent to ${reg.member1.email}`
-              );
+          } else {
 
-            } else {
+            console.log(
+              `⚠️ Email was not sent to ${reg.member1.email}:`,
+              email?.reason ||
+              "Unknown reason"
+            );
 
-              console.log(
-                `⚠️ Offline confirmation email was not sent to ${reg.member1.email}:`,
-                email?.reason ||
-                "Unknown reason"
-              );
-
-            }
+          }
 
         } catch (mailError) {
 
@@ -416,23 +399,14 @@ async function updatePayment(req, res) {
             mailError.message
           );
 
-
           email = {
-
             sent: false,
-
-            reason:
-              mailError.message
-
+            reason: mailError.message
           };
 
         }
 
       } else {
-
-        // ----------------------------------------------------
-        // EMAIL ALREADY SENT
-        // ----------------------------------------------------
 
         email = {
 
@@ -450,13 +424,11 @@ async function updatePayment(req, res) {
 
     }
 
-
     // ========================================================
-    // SAVE EVERYTHING
+    // SAVE REGISTRATION
     // ========================================================
 
     await reg.save();
-
 
     // ========================================================
     // RESPONSE MESSAGE
@@ -464,7 +436,6 @@ async function updatePayment(req, res) {
 
     let message =
       "Payment status updated successfully.";
-
 
     if (
       status === "offline-paid"
@@ -494,7 +465,6 @@ async function updatePayment(req, res) {
 
     }
 
-
     // ========================================================
     // FINAL RESPONSE
     // ========================================================
@@ -511,14 +481,12 @@ async function updatePayment(req, res) {
 
     });
 
-
   } catch (error) {
 
     console.error(
       "Update Payment Error:",
       error
     );
-
 
     return res.status(500).json({
 
@@ -530,7 +498,6 @@ async function updatePayment(req, res) {
     });
 
   }
-
 }
 
 
@@ -547,7 +514,6 @@ async function addCoordinator(req, res) {
       email,
       password
     } = req.body;
-
 
     if (
       !name ||
@@ -567,12 +533,10 @@ async function addCoordinator(req, res) {
 
     }
 
-
     const normalized =
       email
         .trim()
         .toLowerCase();
-
 
     if (
       await User.findOne({
@@ -591,13 +555,11 @@ async function addCoordinator(req, res) {
 
     }
 
-
     const passwordHash =
       await bcrypt.hash(
         password,
         12
       );
-
 
     const user =
       await User.create({
@@ -614,7 +576,6 @@ async function addCoordinator(req, res) {
           "coordinator"
 
       });
-
 
     res.status(201).json({
 
@@ -658,7 +619,6 @@ async function addCoordinator(req, res) {
     });
 
   }
-
 }
 
 
@@ -681,7 +641,6 @@ async function listCoordinators(req, res) {
         .sort({
           createdAt: -1
         });
-
 
     res.json({
 
@@ -709,7 +668,6 @@ async function listCoordinators(req, res) {
     });
 
   }
-
 }
 
 
@@ -724,15 +682,23 @@ async function createOfflineRegistration(req, res) {
     const b =
       req.body;
 
+    // ========================================================
+    // VALIDATION
+    // ========================================================
 
     if (
       !b.teamName ||
+      !b.collegeName ||
+      !b.department ||
+
       !b.member1?.name ||
       !b.member1?.email ||
       !b.member1?.mobile ||
+
       !b.member2?.name ||
       !b.member2?.email ||
       !b.member2?.mobile ||
+
       !b.amount
     ) {
 
@@ -741,12 +707,15 @@ async function createOfflineRegistration(req, res) {
         success: false,
 
         message:
-          "Complete team, member and amount details are required."
+          "Complete team, college, department, member and amount details are required."
 
       });
 
     }
 
+    // ========================================================
+    // CREATE REGISTRATION
+    // ========================================================
 
     const reg =
       await Registration.create({
@@ -756,6 +725,12 @@ async function createOfflineRegistration(req, res) {
 
         teamName:
           b.teamName.trim(),
+
+        collegeName:
+          b.collegeName.trim(),
+
+        department:
+          b.department.trim(),
 
         member1: {
 
@@ -810,17 +785,19 @@ async function createOfflineRegistration(req, res) {
 
       });
 
-
     // ========================================================
-    // EMAIL
+    // SEND EMAIL
     // ========================================================
 
     let email = {
       sent: false
     };
 
-
     try {
+
+      console.log(
+        `📧 Sending offline registration email to ${reg.member1.email}...`
+      );
 
       email =
         await sendRegistrationEmail({
@@ -839,17 +816,32 @@ async function createOfflineRegistration(req, res) {
 
         });
 
-
-      if (email.sent) {
+      if (email?.sent) {
 
         reg.confirmationSentAt =
           new Date();
 
         await reg.save();
 
+        console.log(
+          `✅ Offline registration email sent to ${reg.member1.email}`
+        );
+
+      } else {
+
+        console.log(
+          `⚠️ Offline registration email not sent:`,
+          email?.reason || "Unknown reason"
+        );
+
       }
 
     } catch (e) {
+
+      console.error(
+        "❌ Offline registration email error:",
+        e.message
+      );
 
       email = {
 
@@ -862,13 +854,18 @@ async function createOfflineRegistration(req, res) {
 
     }
 
+    // ========================================================
+    // RESPONSE
+    // ========================================================
 
     res.status(201).json({
 
       success: true,
 
       message:
-        "Offline registration created. Confirmation code generated and email attempted.",
+        email.sent
+          ? "Offline registration created and confirmation email sent successfully."
+          : "Offline registration created, but confirmation email could not be sent.",
 
       registration:
         reg,
@@ -894,7 +891,6 @@ async function createOfflineRegistration(req, res) {
     });
 
   }
-
 }
 
 
@@ -914,7 +910,6 @@ async function exportExcel(req, res) {
         })
         .lean();
 
-
     const data =
       rows.map((r) => ({
 
@@ -923,6 +918,12 @@ async function exportExcel(req, res) {
 
         "Team Name":
           r.teamName,
+
+        "College Name":
+          r.collegeName || "",
+
+        "Department":
+          r.department || "",
 
         "Member 1 Name":
           r.member1.name,
@@ -966,23 +967,19 @@ async function exportExcel(req, res) {
 
       }));
 
-
     const workbook =
       XLSX.utils.book_new();
-
 
     const sheet =
       XLSX.utils.json_to_sheet(
         data
       );
 
-
     XLSX.utils.book_append_sheet(
       workbook,
       sheet,
       "Registrations"
     );
-
 
     const buffer =
       XLSX.write(
@@ -993,18 +990,15 @@ async function exportExcel(req, res) {
         }
       );
 
-
     res.setHeader(
       "Content-Disposition",
       'attachment; filename="void-run-registrations.xlsx"'
     );
 
-
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
-
 
     res.send(buffer);
 
@@ -1025,7 +1019,6 @@ async function exportExcel(req, res) {
     });
 
   }
-
 }
 
 

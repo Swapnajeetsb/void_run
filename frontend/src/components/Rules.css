@@ -1,0 +1,97 @@
+.rules-section {
+  width: 100%;
+  padding: 90px 20px;
+  background: #080b14;
+  color: #ffffff;
+}
+
+.rules-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.rules-heading {
+  text-align: center;
+  margin-bottom: 55px;
+}
+
+.rules-heading span {
+  color: #f97316;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+
+.rules-heading h2 {
+  margin: 10px 0;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+}
+
+.rules-heading p {
+  margin: 0 auto;
+  max-width: 600px;
+  color: #94a3b8;
+  font-size: 16px;
+}
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.rule-card {
+  display: flex;
+  gap: 20px;
+  padding: 26px;
+  background: #111827;
+  border: 1px solid #26334d;
+  border-radius: 18px;
+  transition: 0.3s ease;
+}
+
+.rule-card:hover {
+  transform: translateY(-5px);
+  border-color: #f97316;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+}
+
+.rule-number {
+  min-width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #f97316;
+  color: #080b14;
+  font-weight: 900;
+  font-size: 15px;
+}
+
+.rule-content h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.rule-content p {
+  margin: 0;
+  color: #aab5c5;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .rules-section {
+    padding: 65px 16px;
+  }
+
+  .rules-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rule-card {
+    padding: 22px;
+  }
+}
